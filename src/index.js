@@ -1,6 +1,6 @@
-import { ChatOpenAI } from "@langchain/openai";
-import { StringOutputParser, JsonOutputParser } from "@langchain/core/output_parsers";
-import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatOpenAI } from '@langchain/openai';
+import { StringOutputParser, JsonOutputParser } from '@langchain/core/output_parsers';
+import { PromptTemplate } from '@langchain/core/prompts';
 
 const llm = new ChatOpenAI({
 	model: "gpt-4o-mini",
@@ -130,7 +130,7 @@ const scoringPrompt = PromptTemplate.fromTemplate(`
     You will return expected output in JSON format for the updatted table..
      `);
 
-	 const dominantTraitsPrompt = PromptTemplate.fromTemplate(`
+const dominantTraitsPrompt = PromptTemplate.fromTemplate(`
 		You are an expert in psychometric analysis and investor psychology, with years of experience in startups analysis. You've been given a JSON data array containing many traits, each with a trait number, name, and a specific description relevant to performance and decision-making. You also have a company summary that includes its vision, mission, target market, and competitive advantages,etc.
 
 		Ypur task is to analyze the company/startup first critically and then evaluate and analyze the traits in the context of this company's profile. Identify the 3 traits that are likely to resonate most with potential investors, given based entirely on the company's profile. Consider the following factors:
@@ -161,8 +161,7 @@ const scoringPrompt = PromptTemplate.fromTemplate(`
 
 	`);
 
-
-	const statusPrompt = PromptTemplate.fromTemplate(`
+const statusPrompt = PromptTemplate.fromTemplate(`
 		You are tasked with evaluating an startup investment against a dynamic investment profile schema, using both the provided 'investment profile questions' and the summary of the 'company data' context. Your goal is to classify the application based on specific eligibility criteria as either "Accepted," "Rejected," or "Potential."
 
 		To do this, you will need to consider:
@@ -206,13 +205,12 @@ const scoringPrompt = PromptTemplate.fromTemplate(`
 	reason: "Brief explanation of the classification decision."
 	`);
 
-
-
 export default {
 	async queue(event, env) {
-		const queryMessage = event.messages[0]
-		const queueType = queryMessage.body.queueType
-		const data = queryMessage.body
+		const queryMessage = event.messages[0];
+		const queueType = queryMessage.body.queueType;
+		const data = queryMessage.body;
+
 		try {
 			switch (queueType) {
 				case 'generateFounderSummary':
@@ -233,9 +231,6 @@ export default {
 				case 'generateTalkingPointsCoachMarketOppurtunity':
 					await generateTalkingPointsCoachMarketOppurtunity(data, env);
 					break;
-				case 'generateAllSummary':
-					await generateAllAtOnce(data, env);
-					break;
 				default:
 					console.error(`Unhandled queue: ${event.queue.name}`);
 			}
@@ -245,10 +240,156 @@ export default {
 	},
 
 	async fetch(request, env) {
-		const requestPayload = await request.json();
-		await env.openAIQueueBinding.send({ ...requestPayload });
-		return new Response("Job added to queue", { status: 200 });
+		if (request.method === 'OPTIONS') {
+			// Handle CORS preflight request
+			return new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Allow-Origin': '*', // Or specify specific origin
+					'Access-Control-Allow-Methods': 'POST, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type',
+				},
+			});
+		}
+
+		// Process POST requests
+		if (request.method === 'POST') {
+			const requestPayload = await request.json();
+			console.log('requestPayload fetch: ===>', requestPayload);
+			await env.openAIQueueBinding.send({ ...requestPayload });
+
+			// Add CORS headers to the response
+			return new Response('Job added to queue', {
+				status: 200,
+				headers: {
+					'Access-Control-Allow-Origin': '*', // Or specify specific origin
+					'Access-Control-Allow-Methods': 'POST, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type',
+				},
+			});
+		}
+
+		// Default response for unsupported methods
+		return new Response('Method not allowed', { status: 405 });
 	},
+};
+
+const generateSummaryData = (submission) => {
+	return {
+		Company: submission['company'],
+		legal_name: submission["What's your company's legal name?"],
+		description: submission['Please articulate what your business does and sell your vision in no more than 5 sentences.'],
+		website: '',
+		product_launched: submission['service_launched'],
+		launch_date: submission['launch_date'],
+		industry_sector: submission['sector'],
+		headquarters_location: submission['Where is your company physically headquartered?'],
+		incorporation_location: submission['Where is your company incorporated?'],
+		revenue_last_six_months: submission['revenue'],
+		ebitda_last_six_months: submission['EBITDA'],
+		revenue_trend_explanation: submission['If there are any trends in the revenue numbers, please explain.'],
+		total_customers_six_months_ago: parseInt(submission['How many total customers did your company have six months ago?']),
+		notable_customers: submission[' If any customers or partners are notable, please share.'],
+		monthly_burn_rate: submission['burnrate'],
+		cash_balance: submission['cash_balance'],
+		target_customer_location: submission['target_customers'],
+		go_to_market_channels: submission['What are your go-to-market channels?'],
+		problem_addressed: submission['What problem does your company address?'],
+		competitors: submission['Who are your competitors or substitutes?'],
+		unique_value_proposition: submission['What makes your company stand out? (Ensure minimum of 5 sentences)'],
+		outside_funding_raised: submission[' Have you already raised any outside funding?'],
+		assistance_needed: submission['What functions do you need assistance with in the accelerator program?'],
+		applied_to_500_previously: submission['Have you applied to 500 previously?'],
+		progress_since_last_application: submission[" What is your company's progress since you last applied?"],
+		founding_team: submission['The founding team is the heartbeat of the organisation - please tell us more about them.'],
+		reason_for_starting_company: submission['Why did you decide to start this company? (Ensure minimum of 5 sentences)'],
+		execution_vision_team: submission['Could you tell us why this founding team will execute its vision? (Ensure minimum of 5 sentences)'],
+		prior_funding_experience: submission['Have you or your team raised funding before across other ventures, and if so, how much?'],
+		team_wins: submission['Showcase your team’s wins outside of this venture.'],
+		business_highlights: [submission['List max 3 business highlights you are most proud of.']],
+		full_time_employees: 5,
+		part_time_employees: 5,
+		co_founders: [''],
+		co_founders_linkedin: [''],
+		founder_story: submission['List all co-founders with LinkedIn profiles.'],
+		expectations_from_investor:
+			submission['What would you like to see from your investor? How would you expect your investor to be involved? '] ?? '',
+		primary_contact_first_name: submission['First name of primary contact'],
+		primary_contact_last_name: submission['Last name of primary contact'],
+		primary_contact_email: submission['email'],
+		primary_contact_phone: submission['phone'],
+		pitch_deck_link: '',
+		product_demo_video: '',
+		fundraising_amount: submission['fundraise'],
+		company_valuation: submission['valuation'],
+		equity_split: submission['What is the equity split amongst the founders?'],
+		funding_commitments: submission['What are the funding committments?'],
+		business_stage: submission['stage'],
+	};
+};
+
+export const generateConditions = (tableDataList) => {
+	let conditionsStr = '';
+
+	for (const row of tableDataList.tables) {
+		const points = [row.onePoint, row.twoPoint, row.threePoint, row.fourPoint, row.fivePoint];
+		if (row.topic && row.assessment) {
+			let conditionBlock = `## ${row.topic} - ${row.assessment.trim()} ##\n`;
+			points.forEach((point, i) => {
+				if (point && point.trim()) {
+					conditionBlock += `If the answer matches '${point.trim()}', assign ${i + 1} point(s).\n`;
+				}
+			});
+			conditionsStr += `${conditionBlock}\n`;
+		}
+	}
+
+	return conditionsStr;
+};
+
+const parseTableData = (tableDataList) => {
+	const topics = {};
+
+	for (const row of tableDataList.tables) {
+		const topic = row.topic;
+		const question = row.assessment;
+		const points = [row.onePoint, row.twoPoint, row.threePoint, row.fourPoint, row.fivePoint]
+			.filter((p) => p !== undefined && p.trim() !== '')
+			.map((p) => p.trim());
+
+		const evaluation = {
+			question,
+			options: points,
+			scores: Array.from({ length: points.length }, (_, i) => i + 1),
+		};
+
+		if (topics[topic]) {
+			topics[topic].push(evaluation);
+		} else {
+			topics[topic] = [evaluation];
+		}
+	}
+
+	const dynamicFields = {};
+	for (const [topic, criteria] of Object.entries(topics)) {
+		const fieldName = topic.replace(/\s+/g, '_');
+		dynamicFields[fieldName] = criteria.length > 1 ? [Array, `Criteria for ${topic}`] : [Object, `Criteria for ${topic}`];
+	}
+
+	return dynamicFields;
+};
+
+const createDynamicModel = (fieldData) => {
+	const dynamicModel = {};
+
+	for (const [fieldName, [fieldType, fieldInfo]] of Object.entries(fieldData)) {
+		dynamicModel[fieldName] = {
+			type: fieldType,
+			description: fieldInfo,
+		};
+	}
+
+	return dynamicModel;
 };
 
 const generateFounderSummary = async (data, env) => {
@@ -257,84 +398,84 @@ const generateFounderSummary = async (data, env) => {
 		const founderSummaryChain = founderSummaryPrompt.pipe(llm).pipe(new StringOutputParser());
 		const founderSummary = await founderSummaryChain.invoke(companyData);
 
-		await saveToD1(env.DB, submission_id, founderSummary, "queue-one");
+		await saveToD1(env.DB, submission_id, founderSummary, 'queue-one');
 	} catch (e) {
-		console.log("error founder summary: ", e)
-		return null
+		console.log('error founder summary: ', e);
+		return null;
 	}
-}
+};
 
 const generateFounderDynamics = async (data, env) => {
 	try {
 		const { companyData, submission_id } = data;
 		const founderDynamicsChain = founderDynamicsPrompt.pipe(llm).pipe(new StringOutputParser());
-		const founderDynamics = await founderDynamicsChain.invoke(companyData)
+		const founderDynamics = await founderDynamicsChain.invoke(companyData);
 
-		await saveToD1(env.DB, submission_id, founderDynamics, "queue-one");
+		await saveToD1(env.DB, submission_id, founderDynamics, 'queue-one');
 	} catch (e) {
-		console.log("error founder dynamics: ", e)
-		return null
+		console.log('error founder dynamics: ', e);
+		return null;
 	}
-}
+};
 
 export const generateTalkingPointsMarketOppurtunity = async (data, env) => {
 	try {
 		const { companyData, submission_id } = data;
 		const founderTalkingPointsMarketOppurtunityChain = talkingpointsMarketoppPrompt.pipe(llm).pipe(new StringOutputParser());
-		const founderTalkingPointsMarketOppurtunity = await founderTalkingPointsMarketOppurtunityChain.invoke(companyData)
+		const founderTalkingPointsMarketOppurtunity = await founderTalkingPointsMarketOppurtunityChain.invoke(companyData);
 
-		await saveToD1(env.DB, submission_id, founderTalkingPointsMarketOppurtunity, "queue-one");
+		await saveToD1(env.DB, submission_id, founderTalkingPointsMarketOppurtunity, 'queue-one');
 	} catch (e) {
-		console.log("error talking points market oppurtunity: ", e)
-		return null
+		console.log('error talking points market oppurtunity: ', e);
+		return null;
 	}
-}
+};
 
 export const generateTalkingPointsCoachMarketOppurtunity = async (data, env) => {
 	try {
 		const { companyData, submission_id } = data;
 		const founderTalkingPointsCoachMarketOppurtunityChain = talkingpointsCoachmarketoppPrompt.pipe(llm).pipe(new StringOutputParser());
-		const founderTalkingPointsCoachMarketOppurtunity = await founderTalkingPointsCoachMarketOppurtunityChain.invoke(companyData)
+		const founderTalkingPointsCoachMarketOppurtunity = await founderTalkingPointsCoachMarketOppurtunityChain.invoke(companyData);
 
-		await saveToD1(env.DB, submission_id, founderTalkingPointsCoachMarketOppurtunity, "queue-one");
+		await saveToD1(env.DB, submission_id, founderTalkingPointsCoachMarketOppurtunity, 'queue-one');
 	} catch (e) {
-		console.log("error talking points coach market oppurtunity: ", e)
-		return null
+		console.log('error talking points coach market oppurtunity: ', e);
+		return null;
 	}
-}
+};
 
 export const generateConcernsParagraph = async (data, env) => {
 	try {
 		const { companyData, submission_id } = data;
 		const founderConcernsParagraphChain = concernsParagraphPrompt.pipe(llm).pipe(new StringOutputParser());
-		const founderConcernsParagraph = await founderConcernsParagraphChain.invoke(companyData)
+		const founderConcernsParagraph = await founderConcernsParagraphChain.invoke(companyData);
 
-		await saveToD1(env.DB, submission_id, founderConcernsParagraph, "queue-one");
+		await saveToD1(env.DB, submission_id, founderConcernsParagraph, 'queue-one');
 	} catch (e) {
-		console.log("error concerns paragraph: ", e)
-		return null
+		console.log('error concerns paragraph: ', e);
+		return null;
 	}
-}
+};
 
 export const generateScore = async (data, env) => {
 	try {
 		const { companyData, tableData, submission_id } = data;
-		console.log("tableData: ", tableData)
-		const updatedTableData = generateConditions(tableData)
-		console.log("updatedTableData: ", updatedTableData)
-		const scoringOutput = generateScoringOutput(JSON.parse(updatedTableData))
-		console.log("scoringOutput: ", scoringOutput)
-		const parser = new JsonOutputParser(scoringOutput)
+		console.log('tableData: ', tableData);
+		const updatedTableData = generateConditions(tableData);
+		console.log('updatedTableData: ', updatedTableData);
+		const scoringOutput = generateScoringOutput(JSON.parse(updatedTableData));
+		console.log('scoringOutput: ', scoringOutput);
+		const parser = new JsonOutputParser(scoringOutput);
 
 		const scoringChain = scoringPrompt.pipe(llm).pipe(parser);
 		const scoring = await scoringChain.invoke(companyData, tableData);
 
-		await saveToD1(env.DB, submission_id, scoring, "queue-one");
+		await saveToD1(env.DB, submission_id, scoring, 'queue-one');
 	} catch (e) {
-		console.log("error generate score: ", e)
-		return null
+		console.log('error generate score: ', e);
+		return null;
 	}
-}
+};
 
 // export const generateDominantTraits = async (data, env) => {
 // 	const dominantTraitsChain = await dominantTraitsPrompt.pipe(llm).pipe(new StringOutputParser())
@@ -345,18 +486,18 @@ export const generateStatus = async (data, env) => {
 	try {
 		const { investmentProfileQuestions, submission_id } = data;
 		const statusChain = statusPrompt.pipe(llm).pipe(new StringOutputParser());
-		const statusOutput = await statusChain.invoke({company_data: company_data, investmentProfileQuestions: investmentProfileQuestions});
+		const statusOutput = await statusChain.invoke({ company_data: company_data, investmentProfileQuestions: investmentProfileQuestions });
 
-		await saveToD1(env.DB, submission_id, statusOutput, "queue-one");
+		await saveToD1(env.DB, submission_id, statusOutput, 'queue-one');
 	} catch (e) {
-		console.log("error generate status: ", e)
-		return null
+		console.log('error generate status: ', e);
+		return null;
 	}
-}
+};
 
 export const generateAllAtOnce = async (data, env) => {
-	const founderSummary =  await generateFounderSummary(data, env);
-	const founderDynamics =  await generateFounderDynamics(data, env);
+	const founderSummary = await generateFounderSummary(data, env);
+	const founderDynamics = await generateFounderDynamics(data, env);
 	const scoring = await generateScore(data, env);
 	const talkingMarketOpportunity = await generateTalkingPointsMarketOppurtunity(data, env);
 	const concerns = await generateConcernsParagraph(data, env);
@@ -370,27 +511,34 @@ export const generateAllAtOnce = async (data, env) => {
 		talkingCoach,
 		concerns,
 		scoring,
-		status
+		status,
 	});
-}
+};
 
-async function saveSubmissionSummaryToD1 (db, submission_id, importRowId, data) {
+async function saveSubmissionSummaryToD1(db, submission_id, importRowId, data) {
 	const query = `UPDATE submissions SET founderSummary = ?, founderDynamics = ?, talkingMarketOpportunity = ?, talkingCoach = ?, concerns = ?, scoring = ?, status = ? WHERE submission_id = ? AND import_row_id = ?;`;
-	await db.prepare(query)
-		.bind(data.founderSummary, data.founderDynamics, data.talkingMarketOpportunity, data.talkingCoach, data.concerns, data.scoring, data.status, submission_id, importRowId)
+	await db
+		.prepare(query)
+		.bind(
+			data.founderSummary,
+			data.founderDynamics,
+			data.talkingMarketOpportunity,
+			data.talkingCoach,
+			data.concerns,
+			data.scoring,
+			data.status,
+			submission_id,
+			importRowId
+		)
 		.run();
 
 	console.log(`Stored submission summary for ${submission_id}`);
 }
 
 async function saveToD1(db, submission_id, responseContent, queueName) {
-	console.log("id ==>", submission_id, responseContent);
-	  const query = `INSERT INTO queue_responses (queue_name, original_content, response_content, created_at) VALUES (?, ?, ?, ?);`;
-	  await db.prepare(query)
-	    .bind(queueName, originalContent, responseContent, new Date().toISOString())
-	    .run();
+	console.log('id ==>', submission_id, responseContent);
+	const query = `INSERT INTO queue_responses (queue_name, original_content, response_content, created_at) VALUES (?, ?, ?, ?);`;
+	await db.prepare(query).bind(queueName, originalContent, responseContent, new Date().toISOString()).run();
 
 	console.log(`Stored response for ${queueName}`);
 }
-
-
