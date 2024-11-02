@@ -8,53 +8,72 @@ const llm = new ChatOpenAI({
 });
 
 const founderSummaryPrompt = PromptTemplate.fromTemplate(`
-    Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
+   You are a experienced VC/Investor Analayser with yeras of experience in analyzing companies for investment opprtunities.Given the company info below , generate a comprehensive two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
 
-    Summary:
+    Company Info:
 
-    {Company}, legally known as {legal_name}, was founded by {founding_team} with the purpose of addressing {problem_addressed} in the {industry_sector}. The company, headquartered in {headquarters_location} and incorporated in {incorporation_location}, successfully launched {product_launched} on {launch_date}. Operating in a competitive landscape with players like {competitors}, their unique value proposition, {unique_value_proposition}, sets them apart. The company's go-to-market strategy focuses on reaching {target_customer_location} via {go_to_market_channels}, aiming to capture a significant share of the market.
+   {company_data}
+     Try to follow the format below:
+      Follow these steps to create the summary:
 
-    Financially, {Company} has reported a revenue of {revenue_last_six_months} and EBITDA of {ebitda_last_six_months} over the last six months, supported by a current cash balance of {cash_balance}. Their monthly burn rate of {monthly_burn_rate} indicates disciplined spending. The founding teams experience is further highlighted by {team_wins} and their ability to secure prior funding ({prior_funding_experience}). They seek additional funding to meet their goal of raising {fundraising_amount}, with a company valuation of {company_valuation}. Their execution strategy, {execution_vision_team}, reflects their commitment to growth and scalability.
+    1. First Paragraph - Company Overview and Market Position:
+       - Begin with company name, legal name, and founding team
+       - State the core problem they're addressing and their industry
+       - Include their location details and product launch information
+       - Describe their competitive positioning and unique value proposition
+       - Explain their go-to-market strategy and target market
+
+    2. Second Paragraph - Financial Position and Future Plans:
+       - Detail their financial performance (revenue, EBITDA)
+       - Include current cash position and burn rate
+       - Highlight founding team's achievements and funding experience
+       - State their fundraising goals and valuation
+       - End with their execution strategy and growth plans
+
+       Key points to remember:
+    - Focus on facts, avoid opinions or evaluative statements
+    - Maintain a professional, objective tone
+    - Present information in a logical, flowing narrative
+    - Ensure all key metrics and data points are accurately represented
+    - Create clear connections between related pieces of information for investment perspectives.
 `);
 
 const founderDynamicsPrompt = PromptTemplate.fromTemplate(`
-    Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
+    Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the founder’s journey and what brought them here? What motivated them to set up this business. Was there any moment that motivated them to set up this business? What did they do before setting up this venture? How did the founders know each other?
 
-    Summary:
+    Company Info:
+    {company_data}
 
-    {Company}, legally registered as {legal_name}, is focused on addressing {problem_addressed} within the {industry_sector}. The founders, {founding_team}, launched {product_launched} on {launch_date}, aiming to capture {target_customer_location}. They’ve built the company from {headquarters_location}, leveraging a unique value proposition of {unique_value_proposition} to stand out from competitors like {competitors}. The founders, driven by {reason_for_starting_company}, are strategically targeting customers through channels like {go_to_market_channels}.
 
-    Financial performance in the last six months shows a revenue of {revenue_last_six_months} and EBITDA of {ebitda_last_six_months}, with {total_customers_six_months_ago} customers as of six months ago, including notable clients such as {notable_customers}. With a monthly burn rate of {monthly_burn_rate} and a current cash balance of {cash_balance}, the team is efficiently managing its resources. Their experience with {prior_funding_experience} has enabled them to raise {outside_funding_raised}, positioning them well for future fundraising goals of {fundraising_amount}. Their vision and execution strategy are supported by the team’s achievements like {team_wins} and a clear focus on {execution_vision_team}.
+       Key points to remember:
+    - Focus on facts, avoid opinions or evaluative statements
+    - Maintain a professional, objective tone
+    - Present information in a logical, flowing narrative
+    - Ensure all key metrics and data points are accurately represented
+    - Create clear connections between related pieces of information for investment perspectives.
 `);
 
 const talkingpointsMarketoppPrompt = PromptTemplate.fromTemplate(`
-    Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
+    Now, using the responses provided above, generate a two-paragraph summary. For the first Paragraph, prepare response in single paragraph by following questions - Do they truly understand the Market Size their business is addressing through a logical response. Do they have a clear unique and defensible business vs their competitors. Do not create a list and prepare a single paragraph - Verify independently the market sizing as well.
+    For second paragraph, Does the team have the necessary skill set in the field they are a founder of through previous work experience. If its a technology driven business, is there a CTO (Chief Technical Office) or someone with technical knowledge. Have the team raised money before in this or previous ventures. Do not create a list and prepare a single paragraph. DO they have a proper plan in place? Do they have a plan to execute the vision?
 
-    Summary:
-
-    {Company}, legally known as {legal_name}, has been making strides in the {industry_sector} by solving {problem_addressed} with their innovative product/service, {product_launched}. Since launching on {launch_date}, the company has targeted {target_customer_location} through {go_to_market_channels}. Their financial performance, with a revenue of {revenue_last_six_months} and EBITDA of {ebitda_last_six_months}, shows steady growth. They differentiate themselves through {unique_value_proposition}, while key competitors include {competitors}.
-
-    The company has a strong financial position with a cash balance of {cash_balance}, though their monthly burn rate of {monthly_burn_rate} reflects ongoing operational costs. The founding team’s leadership, including {co_founders}, has propelled the company forward, driving customer acquisition and growth, including {total_customers_six_months_ago} customers and notable partnerships with {notable_customers}. They have also successfully raised {outside_funding_raised}, and are looking to secure additional investment of {fundraising_amount} at a valuation of {company_valuation}, with {equity_split} equity split among founders. Their execution strategy, {execution_vision_team}, ensures they are well-positioned to seize new market opportunities.
+    Company Info:
+    {company_data}
 `);
 
 const talkingpointsCoachmarketoppPrompt = PromptTemplate.fromTemplate(`
-    Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
+    Now, using the responses provided above, generate a two-paragraph summary.prepare a response in single paragraph by following questions  - Do they have good mentors around them and do they respect them. Have they responded to failure in a positive way where they have shown growth from it and humility. What sacrifices they made to launch this business?. Do not create a list and prepare a single paragraph.
 
-    Summary:
-
-    {Company}, formally known as {legal_name}, was established to address {problem_addressed} within the {industry_sector}. The founders, {co_founders}, have successfully launched {product_launched} on {launch_date}, from their headquarters in {headquarters_location}. Their strategy revolves around targeting {target_customer_location} through {go_to_market_channels}, differentiating the company from competitors such as {competitors} with their unique value proposition: {unique_value_proposition}. The founders’ decision to create the company stems from {reason_for_starting_company}, and their execution strategy revolves around {execution_vision_team}.
-
-    The company has made significant progress in its financial performance, generating {revenue_last_six_months} in revenue and {ebitda_last_six_months} in EBITDA over the last six months. With a burn rate of {monthly_burn_rate} and a current cash balance of {cash_balance}, they are managing expenses prudently. Their ability to attract notable customers like {notable_customers} has been instrumental in growth. They have raised {outside_funding_raised} and are currently seeking to raise {fundraising_amount}, at a valuation of {company_valuation}, to fuel their next stage of growth. The founders’ past wins, such as {team_wins}, and prior funding experience ({prior_funding_experience}) further demonstrate their readiness for expansion.
+    Company Info:
+    {company_data}
 `);
 
 const concernsParagraphPrompt = PromptTemplate.fromTemplate(`
     Now, using the responses provided above, generate a two-paragraph summary. Focus on capturing the essence of the business vision, the problem being solved, the founding team's strengths, and their execution strategy. Stick to the facts and do not give opinions.
 
-    Summary:
+    Here is the company Info:
 
-    {Company}, legally known as {legal_name}, is focused on addressing {problem_addressed} in the {industry_sector}. The product/service, {product_launched}, launched on {launch_date}, aims to tackle key issues in the market. The company's go-to-market strategy targets {target_customer_location}, leveraging {go_to_market_channels}, but competitors such as {competitors} could present challenges. Despite these challenges, their unique value proposition—{unique_value_proposition}—offers a strong differentiator.
-
-    Financially, while the company reported {revenue_last_six_months} in revenue and {ebitda_last_six_months} EBITDA over the last six months, there are concerns over the monthly burn rate of {monthly_burn_rate} and the sustainability of their cash balance ({cash_balance}). Their goal of raising {fundraising_amount} at a valuation of {company_valuation} will be crucial to maintaining growth. With {full_time_employees} full-time and {part_time_employees} part-time employees, the team’s ability to execute effectively will be vital. The company's previous wins ({team_wins}) and the leadership of the founding team {founding_team} offer hope, but challenges in competition and resource management remain key concerns.
+    {company_data}.
 
     Remember to provide output in the following type of  Output Structure. Choose the headings, and paragraphs based on the prompts above.It may or may not be similar to this example below, but follow the format.
     - <b>Product and Market Validation Stage</b>
@@ -111,6 +130,82 @@ const scoringPrompt = PromptTemplate.fromTemplate(`
     You will return expected output in JSON format for the updatted table..
      `);
 
+	 const dominantTraitsPrompt = PromptTemplate.fromTemplate(`
+		You are an expert in psychometric analysis and investor psychology, with years of experience in startups analysis. You've been given a JSON data array containing many traits, each with a trait number, name, and a specific description relevant to performance and decision-making. You also have a company summary that includes its vision, mission, target market, and competitive advantages,etc.
+
+		Ypur task is to analyze the company/startup first critically and then evaluate and analyze the traits in the context of this company's profile. Identify the 3 traits that are likely to resonate most with potential investors, given based entirely on the company's profile. Consider the following factors:
+
+	JSON Array of Traits (including trait number, name, and description): {traits_list}
+	###
+
+	Company Info:
+
+	{company_data}
+	###
+
+	Analyze carefully and inspect the traits that would be most appealing to investors based on the company's profile. For example, ypu can Consider the following criterias:
+
+		Alignment with Company Vision and Mission: Which traits reflect qualities that directly support the company's long-term objectives, making it more attractive to investors with a growth-oriented mindset? (Use context from the given company summary ANalysis)
+
+		Market Positioning: Which traits strengthen the company's ability to differentiate itself in the market, highlighting unique attributes or decision-making skills that enhance investor confidence? (Use context from the given company summary ANalysis)
+
+		Risk and Stability: Which traits suggest an ability to manage risk effectively, adapt to changes, and make intuitive yet reliable decisions under uncertainty?  (Use context from the given company summary ANalysis)
+
+	Please return the TraitNum, names and reason of the top 3 traits you identify, the reason must be a brief explanation of why each trait would be advantageous to this particular company's investor appeal, in  JSON output format.MAke sure to follow the format of the output below.
+
+	Example Output:
+
+			"TraitNum": "16",
+			"TraitName": "Trait Name 1",
+			"reason": "This trait aligns with the company's vision by..."
+
+	`);
+
+
+	const statusPrompt = PromptTemplate.fromTemplate(`
+		You are tasked with evaluating an startup investment against a dynamic investment profile schema, using both the provided 'investment profile questions' and the summary of the 'company data' context. Your goal is to classify the application based on specific eligibility criteria as either "Accepted," "Rejected," or "Potential."
+
+		To do this, you will need to consider:
+	1. The investment profile questions
+	2. The summary of the company's data and context
+
+	### Criteria for Classification
+
+	1. **Important Questions**:
+	   - These questions are marked with an "important" field set to 1.
+	   - **Mandatory Matching**: If any important question does not match the applicant's answer exactly, the application should be classified as "Rejected."
+	   - **Proceed to Next Step**: If all important questions match, proceed to evaluate the non-important questions.
+
+	2. **Non-Important Questions with Fallbacks (Amber)**:
+	   - These questions have an "important" field set to 0 and may include a fallback or "amber" question, indicated by an "amber" field set to 1 and a valid "amber_question_id."
+	   - **Matching Logic for Non-Important Questions**:
+		 - If a non-important question does not match the applicant’s answer but has an associated amber question, proceed to check the amber question.
+		 - **Amber Question Matching**:
+			 - If the amber question matches while the original non-important question does not, classify the application as "Potential."
+			 - If neither the non-important question nor the amber question match, classify the application as "Rejected."
+		 - **No Amber Fallback**: If a non-important question does not match and lacks an amber fallback, classify the application as "Rejected."
+
+	3. **Final Classification**:
+	   - **Accepted**: If all important questions match, and either all non-important questions match or are compensated by matching amber questions, classify as "Accepted."
+	   - **Rejected**: If any important question fails to match, or if any non-important question without an amber fallback fails to match, classify as "Rejected."
+	   - **Potential**: If any non-important questions are mismatched but compensated by matching amber questions, classify as "Potential."
+
+	Now let's review the investment profile questions and company summary, and apply these criteria to classify the application:
+
+
+	### Investment Profile Questions and Applicant's Answers
+	{investmentProfileQuestions}
+
+	### Company Info and Context
+	{company_data}
+	##
+
+	Okay, now Classify the application based on the above criteria, considering the company’s context. Your final output should be one of the following: "Accepted," "Rejected," or "Potential,", along with a reason for the reasoning based on these criteria.
+	The output must be in JSON format,containing these fields shown below.
+	status: "Accepted" | "Rejected" | "Potential",
+	reason: "Brief explanation of the classification decision."
+	`);
+
 
 
 export default {
@@ -137,6 +232,9 @@ export default {
 					break;
 				case 'generateTalkingPointsCoachMarketOppurtunity':
 					await generateTalkingPointsCoachMarketOppurtunity(data, env);
+					break;
+				case 'generateAllSummary':
+					await generateAllAtOnce(data, env);
 					break;
 				default:
 					console.error(`Unhandled queue: ${event.queue.name}`);
@@ -238,13 +336,59 @@ export const generateScore = async (data, env) => {
 	}
 }
 
+// export const generateDominantTraits = async (data, env) => {
+// 	const dominantTraitsChain = await dominantTraitsPrompt.pipe(llm).pipe(new StringOutputParser())
+// 	const dominantTraitOutput = dominantTraitsChain.invoke({company_data: company_data,traits_list: transformedDomainatData});
+// }
+
+export const generateStatus = async (data, env) => {
+	try {
+		const { investmentProfileQuestions, submission_id } = data;
+		const statusChain = statusPrompt.pipe(llm).pipe(new StringOutputParser());
+		const statusOutput = await statusChain.invoke({company_data: company_data, investmentProfileQuestions: investmentProfileQuestions});
+
+		await saveToD1(env.DB, submission_id, statusOutput, "queue-one");
+	} catch (e) {
+		console.log("error generate status: ", e)
+		return null
+	}
+}
+
+export const generateAllAtOnce = async (data, env) => {
+	const founderSummary =  await generateFounderSummary(data, env);
+	const founderDynamics =  await generateFounderDynamics(data, env);
+	const scoring = await generateScore(data, env);
+	const talkingMarketOpportunity = await generateTalkingPointsMarketOppurtunity(data, env);
+	const concerns = await generateConcernsParagraph(data, env);
+	const talkingCoach = await generateTalkingPointsCoachMarketOppurtunity(data, env);
+	const status = await generateStatus(data, env);
+
+	await saveSubmissionSummaryToD1(env.DB, data.submission_id, data.importRowId, {
+		founderSummary,
+		founderDynamics,
+		talkingMarketOpportunity,
+		talkingCoach,
+		concerns,
+		scoring,
+		status
+	});
+}
+
+async function saveSubmissionSummaryToD1 (db, submission_id, importRowId, data) {
+	const query = `UPDATE submissions SET founderSummary = ?, founderDynamics = ?, talkingMarketOpportunity = ?, talkingCoach = ?, concerns = ?, scoring = ?, status = ? WHERE submission_id = ? AND import_row_id = ?;`;
+	await db.prepare(query)
+		.bind(data.founderSummary, data.founderDynamics, data.talkingMarketOpportunity, data.talkingCoach, data.concerns, data.scoring, data.status, submission_id, importRowId)
+		.run();
+
+	console.log(`Stored submission summary for ${submission_id}`);
+}
 
 async function saveToD1(db, submission_id, responseContent, queueName) {
 	console.log("id ==>", submission_id, responseContent);
-	//   const query = `INSERT INTO queue_responses (queue_name, original_content, response_content, created_at) VALUES (?, ?, ?, ?);`;
-	//   await db.prepare(query)
-	//     .bind(queueName, originalContent, responseContent, new Date().toISOString())
-	//     .run();
+	  const query = `INSERT INTO queue_responses (queue_name, original_content, response_content, created_at) VALUES (?, ?, ?, ?);`;
+	  await db.prepare(query)
+	    .bind(queueName, originalContent, responseContent, new Date().toISOString())
+	    .run();
 
 	console.log(`Stored response for ${queueName}`);
 }
